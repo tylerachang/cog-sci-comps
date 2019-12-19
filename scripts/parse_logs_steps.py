@@ -1,5 +1,6 @@
 """
-Script to create a subset of the original dataset.
+Parse the logs outputted by OpenNMT-py.
+Reads accuracy per step.
 """
 
 from __future__ import unicode_literals
@@ -18,31 +19,35 @@ argparse.open = open
 def create_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Create a subset of the original dataset")
+        description="Parse an OpenNMT-py log.")
 
     parser.add_argument(
         '--input', '-i', type=argparse.FileType('r'), default=sys.stdin,
         metavar='PATH',
-        help="Input dataset.")
+        help="Input text file.")
 
     parser.add_argument(
         '--output', '-o', type=argparse.FileType('w'), default=sys.stdout,
         metavar='PATH',
-        help="Output dataset.")
-    
+        help="Output text file.")
+        
     parser.add_argument(
         '--keep_every', '-k', type=int, default=1,
-        help="Keep one in every k sentences.")
-        
+        help="Keep one in every values.")
+    
     return parser
 
-
 def main(infile, outfile, keep_every):
-    i = 0
+    i=0
     for line in infile:
-        if i % keep_every == 0:
-            outfile.write(line)
-        i += 1
+        words = line.split()
+        if len(words) == 0:
+            continue
+        if words[-1] == 'sec':
+            accuracy = words[6]
+            if i % keep_every == 0:
+                outfile.write(accuracy[:-1] + "\n")
+            i += 1
 
     
 if __name__ == '__main__':

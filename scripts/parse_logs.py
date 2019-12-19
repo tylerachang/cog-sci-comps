@@ -1,5 +1,6 @@
 """
-Script to create a subset of the original dataset.
+Parse the logs outputted by OpenNMT-py.
+Reads evaluation accuracies or perplexities.
 """
 
 from __future__ import unicode_literals
@@ -18,31 +19,32 @@ argparse.open = open
 def create_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Create a subset of the original dataset")
+        description="Parse an OpenNMT-py log.")
 
     parser.add_argument(
         '--input', '-i', type=argparse.FileType('r'), default=sys.stdin,
         metavar='PATH',
-        help="Input dataset.")
+        help="Input text file.")
 
     parser.add_argument(
         '--output', '-o', type=argparse.FileType('w'), default=sys.stdout,
         metavar='PATH',
-        help="Output dataset.")
+        help="Output text file.")
     
     parser.add_argument(
-        '--keep_every', '-k', type=int, default=1,
-        help="Keep one in every k sentences.")
+        '--read_perplexity', '-p', type=int, default=0,
+        help="Read perplexity or accuracy.")
         
     return parser
 
-
-def main(infile, outfile, keep_every):
-    i = 0
+def main(infile, outfile, read_perplexity):
     for line in infile:
-        if i % keep_every == 0:
-            outfile.write(line)
-        i += 1
+        if read_perplexity == 0:
+            if "Validation accuracy" in line:
+                outfile.write(line.split()[-1] + "\n")
+        else:
+            if "Validation perplexity" in line:
+                outfile.write(line.split()[-1] + "\n")
 
     
 if __name__ == '__main__':
@@ -66,4 +68,4 @@ if __name__ == '__main__':
     if args.output.name != '<stdout>':
         args.output = codecs.open(args.output.name, 'w', encoding='utf-8')
 
-    main(args.input, args.output, args.keep_every)
+    main(args.input, args.output, args.read_perplexity)
