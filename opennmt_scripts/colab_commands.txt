@@ -1,0 +1,83 @@
+# Check GPU.
+!nvidia-smi
+
+# Mount Google Drive to get access to the datasets.
+from google.colab import drive
+drive.mount('/content/drive', force_remount=True)
+
+!git clone https://github.com/OpenNMT/OpenNMT-py
+
+!pip install torchtext==0.4.0
+
+!python OpenNMT-py/setup.py install
+
+# Train the model (starting decay).
+!python OpenNMT-py/train.py \
+-data "drive/My Drive/Cog Sci Comps/Datasets/preprocessed_data/en-to-xx/model" \
+-save_model "drive/My Drive/Cog Sci Comps/ModelCheckpoints-py/en-to-xx-decay/model" \
+-gpu_ranks 0 \
+-save_checkpoint_steps 1000 -keep_checkpoint 1000 \
+-optim adam -learning_rate 0.0002 -batch_size 64 \
+-valid_batch_size 64 -valid_steps 1000 -report_every 100 \
+-encoder_type rnn -decoder_type rnn \
+-rnn_size 500 -layers 4 \
+-global_attention dot -rnn_type LSTM \
+-train_steps 150000 \
+-start_decay_steps 0 -learning_rate_decay 0.5 -decay_steps 30000 \
+-train_from "drive/My Drive/Cog Sci Comps/ModelCheckpoints-py/en-to-xx/model_step_1770000.pt" \
+-reset_optim all \
+
+# Train the model (without decay).
+!python OpenNMT-py/train.py \
+-data "drive/My Drive/Cog Sci Comps/Datasets/preprocessed_data/en-to-xx/model" \
+-save_model "drive/My Drive/Cog Sci Comps/ModelCheckpoints-py/en-to-xx/model" \
+-gpu_ranks 0 \
+-save_checkpoint_steps 1000 -keep_checkpoint 1000 \
+-optim adam -learning_rate 0.0002 -batch_size 64 \
+-valid_batch_size 64 -valid_steps 1000 -report_every 100 \
+-encoder_type rnn -decoder_type rnn \
+-rnn_size 500 -layers 4 \
+-global_attention dot -rnn_type LSTM \
+-train_steps 1770000 \
+-start_decay_steps 10000000 \
+# -train_from "drive/My Drive/Cog Sci Comps/ModelCheckpoints-py/en-to-xx/model_step_177000.pt" \
+
+# Make predictions based on the model (change checkpoint_path). Takes ~5-10 minutes.
+!python OpenNMT-py/translate.py -model "drive/My Drive/Cog Sci Comps/ModelCheckpoints-py/en-to-xx/model_step_177000.pt" \
+-src "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe/UNv1.0.testset-bpe.en" \
+-output "testset_predictions.txt" -replace_unk
+
+# Replace @@ for subword detokenization.
+!sed -i "s/@@ //g" "testset_predictions.txt"
+
+# Get tokenized Bleu score for a translation.
+!perl  OpenNMT-py/tools/multi-bleu.perl "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe/UNv1.0.testset-bpe.xx" < "testset_predictions.txt"
+
+#
+# OLD COMMANDS (preprocessing, etc.)
+#
+
+# Use byte pair encoding for subword tokenization.
+!python OpenNMT-py/tools/learn_bpe.py -i "drive/My Drive/Cog Sci Comps/Datasets/6way/UNv1.0.6way.xx" \
+-o "drive/My Drive/Cog Sci Comps/Datasets/vocabs/vocab-xx-bpe30000-py.code" -s 30000
+
+# Process the datasets with the BPE symbols.
+!python OpenNMT-py/tools/apply_bpe.py -c "drive/My Drive/Cog Sci Comps/Datasets/vocabs/vocab-xx-bpe30000-py.code" \
+-i "drive/My Drive/Cog Sci Comps/Datasets/6way/UNv1.0.6way.xx" -o "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe/UNv1.0.6way-bpe.xx"
+
+# Shuffle the data (may need to create the permutation first).
+!python shuffle.py -i "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe/UNv1.0.6way-bpe.xx" \
+-o "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe-shuffled/UNv1.0.6way-bpe-shuffled.xx"
+
+# Pre-process data. Note that we do not set vocab sizes here; those are determined by the BPE preprocessing.
+!python OpenNMT-py/preprocess.py -train_src "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe-shuffled/UNv1.0.6way-bpe-shuffled.en" \
+-train_tgt "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe-shuffled/UNv1.0.6way-bpe-shuffled.xx" \
+-valid_src "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe/UNv1.0.devset-bpe.en" \
+-valid_tgt "drive/My Drive/Cog Sci Comps/Datasets/processed-bpe/UNv1.0.devset-bpe.xx" \
+-save_data "drive/My Drive/Cog Sci Comps/Datasets/preprocessed_data/en-to-xx/model" \
+-src_seq_length 1000 -tgt_seq_length 1000
+
+# Hit RAM limit to get more RAM.
+d=[]
+while(1):
+  d.append('1')

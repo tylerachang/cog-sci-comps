@@ -1,0 +1,2 @@
+# TODO: remove unnecessary code from OpenNMT-py.
+# Extract representations and put them in the correct form.
