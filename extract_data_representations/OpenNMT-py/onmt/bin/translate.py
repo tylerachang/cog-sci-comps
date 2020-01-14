@@ -7,6 +7,7 @@ from onmt.utils.logging import init_logger
 from onmt.utils.misc import split_corpus
 from onmt.translate.translator import build_translator
 
+import torch
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 
@@ -22,7 +23,7 @@ def translate(opt):
 
     for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
         logger.info("Translating shard %d." % i)
-        translator.translate(
+        scores, predictions, reps_tensor = translator.translate(
             src=src_shard,
             tgt=tgt_shard,
             src_dir=opt.src_dir,
@@ -31,6 +32,9 @@ def translate(opt):
             attn_debug=opt.attn_debug,
             align_debug=opt.align_debug
             )
+    
+    torch.save(reps_tensor, 'reps_tensor.pt')
+    print(reps_tensor.size())
 
 
 def _get_parser():

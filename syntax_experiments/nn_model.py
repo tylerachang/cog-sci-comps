@@ -1,6 +1,6 @@
-'''
+"""
 Majority of this code taken from Deep RNNs Encode Soft Hierarchical Syntax (Blevins, Levy, & Zettlemoyer, 2018). Defines the feedforward NN model used in syntax experiments.
-'''
+"""
 
 import torch
 from torch.autograd import Variable
@@ -84,9 +84,9 @@ class Experiment_Model(torch.nn.Module):
 
 		#set up projection layer
 		self._projection_layer = torch.nn.Linear(self._output_dim, self._num_classes)
-
-		#set up softmax
-		self._softmax_layer = torch.nn.LogSoftmax()	
+		
+		#set up softmax, over the second dimension (because examples x output values)
+		self._softmax_layer = torch.nn.LogSoftmax(dim=1)
 
 	'''
 	Runs data through the model to get class probabilities of each datapoint
@@ -101,11 +101,11 @@ class Experiment_Model(torch.nn.Module):
 		#pass data through projection layer
 		data = self._projection_layer(data)
 		#print('projection res', data) #debugging
-
+		
 		#pass data through softmax
 		data = self._softmax_layer(data)
 		#print('softmax res', data) #debugging
-
+		
 		return data
 
 '''
@@ -265,8 +265,7 @@ class Experiment():
 		f1 = metrics.f1_score(y_hat, y_eval, average='micro')
 		precision = metrics.precision_score(y_hat, y_eval, average='micro')
 		recall = metrics.recall_score(y_hat, y_eval, average='micro')
-
-
+		
 		return accuracy, f1, precision, recall
 
 	#Basically just a wrapper for sklearns classifcation report class, which allows us to break down the performance of the models on a class by class basis

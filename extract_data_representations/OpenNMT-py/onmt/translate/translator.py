@@ -344,12 +344,13 @@ class Translator(object):
 
         all_scores = []
         all_predictions = []
+        reps_tensor = torch.zeros([4, 0, 500])
 
         start_time = time.time()
 
         for batch in data_iter:
-            batch_data = self.translate_batch(
-                batch, data.src_vocabs, attn_debug
+            batch_data, reps_tensor = self.translate_batch(
+                batch, data.src_vocabs, attn_debug, reps_tensor
             )
             translations = xlation_builder.from_batch(batch_data)
 
@@ -436,7 +437,7 @@ class Translator(object):
             import json
             json.dump(self.translator.beam_accum,
                       codecs.open(self.dump_beam, 'w', 'utf-8'))
-        return all_scores, all_predictions
+        return all_scores, all_predictions, reps_tensor
 
     def _align_pad_prediction(self, predictions, bos, pad):
         """
@@ -511,7 +512,7 @@ class Translator(object):
             alignment_attn, prediction_mask, src_lengths, n_best)
         return alignement
 
-    def translate_batch(self, batch, src_vocabs, attn_debug):
+    def translate_batch(self, batch, src_vocabs, attn_debug, reps_tensor):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.beam_size == 1:
@@ -544,7 +545,7 @@ class Translator(object):
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio)
             return self._translate_batch_with_strategy(batch, src_vocabs,
-                                                       decode_strategy)
+                                                       decode_strategy, reps_tensor)
 
     def _run_encoder(self, batch):
         src, src_lengths = batch.src if isinstance(batch.src, tuple) \
@@ -555,9 +556,10 @@ class Translator(object):
 		
         # INSERTED CODE (tylerachang).
         
-        print("len enc_states: {}".format(len(enc_states)))
-        print("enc_states shape: {}".format(enc_states[0].size()))
-        print("enc_states shape: {}".format(enc_states[1].size()))
+        # Debugging.
+#        print("len enc_states: {}".format(len(enc_states)))
+#        print("enc_states shape: {}".format(enc_states[0].size()))
+#        print("enc_states shape: {}".format(enc_states[1].size()))
         
         # END INSERTED CODE.
 		
@@ -632,7 +634,8 @@ class Translator(object):
             self,
             batch,
             src_vocabs,
-            decode_strategy):
+            decode_strategy,
+            reps_tensor):
         """Translate a batch of sentences step by step using cache.
 
         Args:
@@ -640,6 +643,7 @@ class Translator(object):
             src_vocabs (list): list of torchtext.data.Vocab if can_copy.
             decode_strategy (DecodeStrategy): A decode strategy to use for
                 generate translation step by step.
+            reps_tensor: the tensor of representations saved so far.
 
         Returns:
             results (dict): The translation results.
@@ -651,6 +655,10 @@ class Translator(object):
 
         # (1) Run the encoder on the src.
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
+        
+        # Save the encoder states (representations).
+        new_reps_tensor = torch.cat((reps_tensor, enc_states[0].clone()), dim=1)
+        
         self.model.decoder.init_state(src, memory_bank, enc_states)
 
         results = {
@@ -717,7 +725,7 @@ class Translator(object):
                 batch, decode_strategy.predictions)
         else:
             results["alignment"] = [[] for _ in range(batch_size)]
-        return results
+        return results, new_reps_tensor
 
     def _score_target(self, batch, memory_bank, src_lengths,
                       src_vocabs, src_map):
