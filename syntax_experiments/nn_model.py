@@ -199,6 +199,8 @@ class Experiment():
 		#optimizer currently set to AdaGrad, could be parameterized later
 		#lr = 0.01, should also be tuned
 		optimizer = torch.optim.Adagrad(self.model.parameters(), lr=learning_rate)
+		# Try Adam.
+		optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0002)
 
 		#Runs for either the num of epochs or if no improvement on dev set
 		for epoch in range(0, max_epochs):

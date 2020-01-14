@@ -1,0 +1,5 @@
+python3 read_conll.py --input "test.conll" --output_sentences "sentences.txt" --output_phrase_tags "phrase_tags.txt"
+
+python3 OpenNMT-py/tools/apply_bpe.py -c "vocab-en-bpe30000-py.code" -i "sentences.txt" -o "sentences-bpe.txt"
+
+python3 OpenNMT-py/translate.py -model "es-model_step_117000.pt" -src "sentences_test-bpe.txt" -output "testset_predictions.txt" -replace_unk

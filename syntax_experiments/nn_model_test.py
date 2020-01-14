@@ -41,5 +41,5 @@ print('Experiment ', exp)
 
 exp.train(X_train, y_train, max_epochs=50)
 
-# Metrics should all be equal to accuracy because using binary variables.
+# Metrics should all be equal to accuracy.
 print('Test set metrics ', exp.metrics(X_test, y_test))

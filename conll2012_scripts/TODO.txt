@@ -1,1 +1,0 @@
-# TODO: read CoNLL-2012 files and put into the correct form.
