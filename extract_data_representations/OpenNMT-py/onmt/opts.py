@@ -742,6 +742,11 @@ def translate_opts(parser):
               type=int, default=3, choices=[3, 1],
               help="Using grayscale image can training "
                    "model faster and smaller")
+    
+    # Added options.
+    group = parser.add_argument_group('Other')   
+    group.add('--out_reps', '-out_reps', default="",
+        help='Output for sentence representations tensor')
 
 
 # Copyright 2016 The Chromium Authors. All rights reserved.

@@ -11,9 +11,9 @@ import torch
 X_train = torch.load('reps_tensor.pt')
 X_test = torch.load('reps_tensor_test.pt')
 
-# Only the last layer.
-X_train = X_train[3, :, :]
-X_test = X_test[3, :, :]
+# Concatenate the last layer for hidden and context.
+X_train = torch.cat((X_train[3, :, :], X_train[7, :, :]), dim=1)
+X_test = torch.cat((X_test[3, :, :], X_test[7, :, :]), dim=1)
 
 n_train = list(X_train.size())[0]
 n_test = list(X_test.size())[0]
@@ -36,13 +36,16 @@ for line in tag_lines_test:
 # All classes that appear in the train or test set.
 classes = list(set(y_train + y_test))
 
-exp = Experiment(classes, input_dim = d, num_layers = 2, hidden_dims = d)
+# Belinkov (2017) uses 500 hidden dimension and 30 epochs.
+# Blevins (2018) uses 300 hidden dimension.
+exp = Experiment(classes, input_dim = d, num_layers = 1, hidden_dims = 500)
 print('Experiment ', exp)
 
-exp.train(X_train, y_train, max_epochs=500)
+exp.train(X_train, y_train, max_epochs=25)
 
 # Metrics should all be equal to accuracy.
 print('Test set metrics ', exp.metrics(X_test, y_test))
+print('Train set metrics ', exp.metrics(X_train, y_train))
 
 tag_counts = dict()
 for tag in y_train:

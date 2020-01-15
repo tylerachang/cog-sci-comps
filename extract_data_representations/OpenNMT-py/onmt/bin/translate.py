@@ -33,7 +33,7 @@ def translate(opt):
             align_debug=opt.align_debug
             )
     
-    torch.save(reps_tensor, 'reps_tensor.pt')
+    torch.save(reps_tensor, opt.out_reps)
     print(reps_tensor.size())
 
 

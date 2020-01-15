@@ -344,15 +344,19 @@ class Translator(object):
 
         all_scores = []
         all_predictions = []
-        reps_tensor = torch.zeros([4, 0, 500])
+        reps_tensor = torch.zeros([8, 0, 500])
 
         start_time = time.time()
-
+        
+        num_batches = 0
         for batch in data_iter:
+            if num_batches % 30 == 0:
+                print("Translated {} sentences...".format(list(reps_tensor.size())[1]))
             batch_data, reps_tensor = self.translate_batch(
                 batch, data.src_vocabs, attn_debug, reps_tensor
             )
             translations = xlation_builder.from_batch(batch_data)
+            num_batches += 1
 
             for trans in translations:
                 all_scores += [trans.pred_scores[:self.n_best]]
@@ -657,8 +661,8 @@ class Translator(object):
         src, enc_states, memory_bank, src_lengths = self._run_encoder(batch)
         
         # Save the encoder states (representations).
-        new_reps_tensor = torch.cat((reps_tensor, enc_states[0].clone()), dim=1)
-        print(list(new_reps_tensor.size())[1])
+        concat_reps = torch.cat((enc_states[0], enc_states[1]), dim=0)
+        new_reps_tensor = torch.cat((reps_tensor, concat_reps.clone()), dim=1)
         
         self.model.decoder.init_state(src, memory_bank, enc_states)
 
