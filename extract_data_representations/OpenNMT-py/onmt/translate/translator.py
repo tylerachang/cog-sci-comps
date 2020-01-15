@@ -658,6 +658,7 @@ class Translator(object):
         
         # Save the encoder states (representations).
         new_reps_tensor = torch.cat((reps_tensor, enc_states[0].clone()), dim=1)
+        print(list(new_reps_tensor.size())[1])
         
         self.model.decoder.init_state(src, memory_bank, enc_states)
 

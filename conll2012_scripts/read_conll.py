@@ -40,22 +40,19 @@ def create_parser():
 
 
 def main(infile, out_sentences, out_phrase_tags):
-    is_first_line = True
+    line_count = 0
     curr_sentence = ''
     curr_tags = []
     for line in infile:
-        if line[0] == '#' or line == '\n' or line == '':
+        # Ignore some lines.
+        if line[0] == '#' or line == '\n' or line.strip() == '':
             continue
         fields = line.split()
         
-        if fields[3] == '/.' or fields[3] == '/!' or fields[3] == '/-' or fields[3] == '/?':
-            # End of sentence.
-            curr_sentence = ''
-            curr_tags = []
-            continue
-        
+        # Save word and POS.
         curr_line_out = fields[3] + '\t' + fields[4]
-        if curr_sentence != '':
+        # Do not include a space before a '.' or ','.
+        if fields[4] != '.' and fields[3] != ',':
             curr_sentence = curr_sentence + ' '
         curr_sentence = curr_sentence + fields[3]
         
@@ -64,15 +61,17 @@ def main(infile, out_sentences, out_phrase_tags):
         curr_tag = ''
         for char in parse:
             # Assume '(' can only appear before '*' and ')' can only appear after.
-            if char == '(':
+            if char == '(' or char == '*':
                 if curr_tag != '':
+                    if curr_tag == 'TOP':
+                        # End previous sentence.
+                        curr_sentence = fields[3]
+                        curr_tags = []
                     # Add a tag and keep reading a new phrase tag.
                     curr_tags.append(curr_tag)
                     curr_tag = ''
-            elif char == '*':
-                if curr_tag != '':
-                    curr_tags.append(curr_tag)
-                    curr_tag = ''
+
+            if char == '*':
                 # This is the leaf.
                 for i in range(3):
                     if len(curr_tags) > i:
@@ -81,21 +80,23 @@ def main(infile, out_sentences, out_phrase_tags):
                         curr_line_out = curr_line_out + '\tNONE'
             elif char == ')':
                 curr_tags.pop()
-            else:
+            elif char != '(':
                 # Keep reading a phrase tag.
                 curr_tag = curr_tag + char
         
-        # Clean sentence?
+        # Clean sentence from contractions / possessives.
         cleaned_sentence = curr_sentence.replace(" '", "'")
         cleaned_sentence = cleaned_sentence.replace(" n't", "n't")
         
         # Write to files.
-        if not is_first_line:
+        if line_count != 0:
             out_sentences.write('\n')
             out_phrase_tags.write('\n')
         out_sentences.write(cleaned_sentence)
         out_phrase_tags.write(curr_line_out)
-        is_first_line = False
+        line_count += 1
+        
+    print("Done; wrote {} lines.".format(line_count))
 
 
     
