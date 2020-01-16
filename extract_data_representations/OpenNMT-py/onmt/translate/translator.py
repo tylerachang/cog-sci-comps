@@ -346,7 +346,7 @@ class Translator(object):
         num_batches = 0
         curr_reps_tensor = torch.zeros([8, 0, 500])
         for batch in data_iter:
-            if num_batches % 30 == 0:
+            if num_batches % 1000 == 0:
                 print("Translated {} sentences...".format(num_batches))
             if num_batches % 1500 == 0:
                 full_reps_tensor = torch.cat((full_reps_tensor, curr_reps_tensor.clone()), dim=1)
