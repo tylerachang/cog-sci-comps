@@ -332,11 +332,6 @@ class Translator(object):
             shuffle=False
         )
 
-        xlation_builder = onmt.translate.TranslationBuilder(
-            data, self.fields, self.n_best, self.replace_unk, tgt,
-            self.phrase_table
-        )
-
         # Statistics
         counter = count(1)
         pred_score_total, pred_words_total = 0, 0
@@ -344,104 +339,26 @@ class Translator(object):
 
         all_scores = []
         all_predictions = []
-        reps_tensor = torch.zeros([8, 0, 500])
+        full_reps_tensor = torch.zeros([8, 0, 500])
 
         start_time = time.time()
         
         num_batches = 0
+        curr_reps_tensor = torch.zeros([8, 0, 500])
         for batch in data_iter:
             if num_batches % 30 == 0:
-                print("Translated {} sentences...".format(list(reps_tensor.size())[1]))
-            batch_data, reps_tensor = self.translate_batch(
-                batch, data.src_vocabs, attn_debug, reps_tensor
+                print("Translated {} sentences...".format(num_batches))
+            if num_batches % 1500 == 0:
+                full_reps_tensor = torch.cat((full_reps_tensor, curr_reps_tensor.clone()), dim=1)
+                curr_reps_tensor = torch.zeros([8, 0, 500])
+            new_reps_tensor = self.translate_batch(
+                batch, data.src_vocabs, attn_debug
             )
-            translations = xlation_builder.from_batch(batch_data)
+            curr_reps_tensor = torch.cat((curr_reps_tensor, new_reps_tensor.clone()), dim=1)
             num_batches += 1
 
-            for trans in translations:
-                all_scores += [trans.pred_scores[:self.n_best]]
-                pred_score_total += trans.pred_scores[0]
-                pred_words_total += len(trans.pred_sents[0])
-                if tgt is not None:
-                    gold_score_total += trans.gold_score
-                    gold_words_total += len(trans.gold_sent) + 1
-
-                n_best_preds = [" ".join(pred)
-                                for pred in trans.pred_sents[:self.n_best]]
-                if self.report_align:
-                    align_pharaohs = [build_align_pharaoh(align) for align
-                                      in trans.word_aligns[:self.n_best]]
-                    n_best_preds_align = [" ".join(align) for align
-                                          in align_pharaohs]
-                    n_best_preds = [pred + " ||| " + align
-                                    for pred, align in zip(
-                                        n_best_preds, n_best_preds_align)]
-                all_predictions += [n_best_preds]
-                self.out_file.write('\n'.join(n_best_preds) + '\n')
-                self.out_file.flush()
-
-                if self.verbose:
-                    sent_number = next(counter)
-                    output = trans.log(sent_number)
-                    if self.logger:
-                        self.logger.info(output)
-                    else:
-                        os.write(1, output.encode('utf-8'))
-
-                if attn_debug:
-                    preds = trans.pred_sents[0]
-                    preds.append('</s>')
-                    attns = trans.attns[0].tolist()
-                    if self.data_type == 'text':
-                        srcs = trans.src_raw
-                    else:
-                        srcs = [str(item) for item in range(len(attns[0]))]
-                    output = report_matrix(srcs, preds, attns)
-                    if self.logger:
-                        self.logger.info(output)
-                    else:
-                        os.write(1, output.encode('utf-8'))
-
-                if align_debug:
-                    if trans.gold_sent is not None:
-                        tgts = trans.gold_sent
-                    else:
-                        tgts = trans.pred_sents[0]
-                    align = trans.word_aligns[0].tolist()
-                    if self.data_type == 'text':
-                        srcs = trans.src_raw
-                    else:
-                        srcs = [str(item) for item in range(len(align[0]))]
-                    output = report_matrix(srcs, tgts, align)
-                    if self.logger:
-                        self.logger.info(output)
-                    else:
-                        os.write(1, output.encode('utf-8'))
-
-        end_time = time.time()
-
-        if self.report_score:
-            msg = self._report_score('PRED', pred_score_total,
-                                     pred_words_total)
-            self._log(msg)
-            if tgt is not None:
-                msg = self._report_score('GOLD', gold_score_total,
-                                         gold_words_total)
-                self._log(msg)
-
-        if self.report_time:
-            total_time = end_time - start_time
-            self._log("Total translation time (s): %f" % total_time)
-            self._log("Average translation time (s): %f" % (
-                total_time / len(all_predictions)))
-            self._log("Tokens per second: %f" % (
-                pred_words_total / total_time))
-
-        if self.dump_beam:
-            import json
-            json.dump(self.translator.beam_accum,
-                      codecs.open(self.dump_beam, 'w', 'utf-8'))
-        return all_scores, all_predictions, reps_tensor
+        full_reps_tensor = torch.cat((full_reps_tensor, curr_reps_tensor.clone()), dim=1)
+        return full_reps_tensor
 
     def _align_pad_prediction(self, predictions, bos, pad):
         """
@@ -516,7 +433,7 @@ class Translator(object):
             alignment_attn, prediction_mask, src_lengths, n_best)
         return alignement
 
-    def translate_batch(self, batch, src_vocabs, attn_debug, reps_tensor):
+    def translate_batch(self, batch, src_vocabs, attn_debug):
         """Translate a batch of sentences."""
         with torch.no_grad():
             if self.beam_size == 1:
@@ -549,7 +466,7 @@ class Translator(object):
                     stepwise_penalty=self.stepwise_penalty,
                     ratio=self.ratio)
             return self._translate_batch_with_strategy(batch, src_vocabs,
-                                                       decode_strategy, reps_tensor)
+                                                       decode_strategy)
 
     def _run_encoder(self, batch):
         src, src_lengths = batch.src if isinstance(batch.src, tuple) \
@@ -638,8 +555,7 @@ class Translator(object):
             self,
             batch,
             src_vocabs,
-            decode_strategy,
-            reps_tensor):
+            decode_strategy):
         """Translate a batch of sentences step by step using cache.
 
         Args:
@@ -662,75 +578,7 @@ class Translator(object):
         
         # Save the encoder states (representations).
         concat_reps = torch.cat((enc_states[0], enc_states[1]), dim=0)
-        new_reps_tensor = torch.cat((reps_tensor, concat_reps.clone()), dim=1)
-        
-        self.model.decoder.init_state(src, memory_bank, enc_states)
-
-        results = {
-            "predictions": None,
-            "scores": None,
-            "attention": None,
-            "batch": batch,
-            "gold_score": self._gold_score(
-                batch, memory_bank, src_lengths, src_vocabs, use_src_map,
-                enc_states, batch_size, src)}
-
-        # (2) prep decode_strategy. Possibly repeat src objects.
-        src_map = batch.src_map if use_src_map else None
-        fn_map_state, memory_bank, memory_lengths, src_map = \
-            decode_strategy.initialize(memory_bank, src_lengths, src_map)
-        if fn_map_state is not None:
-            self.model.decoder.map_state(fn_map_state)
-
-        # (3) Begin decoding step by step:
-        for step in range(decode_strategy.max_length):
-            decoder_input = decode_strategy.current_predictions.view(1, -1, 1)
-
-            log_probs, attn = self._decode_and_generate(
-                decoder_input,
-                memory_bank,
-                batch,
-                src_vocabs,
-                memory_lengths=memory_lengths,
-                src_map=src_map,
-                step=step,
-                batch_offset=decode_strategy.batch_offset)
-
-            decode_strategy.advance(log_probs, attn)
-            any_finished = decode_strategy.is_finished.any()
-            if any_finished:
-                decode_strategy.update_finished()
-                if decode_strategy.done:
-                    break
-
-            select_indices = decode_strategy.select_indices
-
-            if any_finished:
-                # Reorder states.
-                if isinstance(memory_bank, tuple):
-                    memory_bank = tuple(x.index_select(1, select_indices)
-                                        for x in memory_bank)
-                else:
-                    memory_bank = memory_bank.index_select(1, select_indices)
-
-                memory_lengths = memory_lengths.index_select(0, select_indices)
-
-                if src_map is not None:
-                    src_map = src_map.index_select(1, select_indices)
-
-            if parallel_paths > 1 or any_finished:
-                self.model.decoder.map_state(
-                    lambda state, dim: state.index_select(dim, select_indices))
-
-        results["scores"] = decode_strategy.scores
-        results["predictions"] = decode_strategy.predictions
-        results["attention"] = decode_strategy.attention
-        if self.report_align:
-            results["alignment"] = self._align_forward(
-                batch, decode_strategy.predictions)
-        else:
-            results["alignment"] = [[] for _ in range(batch_size)]
-        return results, new_reps_tensor
+        return concat_reps
 
     def _score_target(self, batch, memory_bank, src_lengths,
                       src_vocabs, src_map):

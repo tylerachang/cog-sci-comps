@@ -23,7 +23,7 @@ def translate(opt):
 
     for i, (src_shard, tgt_shard) in enumerate(shard_pairs):
         logger.info("Translating shard %d." % i)
-        scores, predictions, reps_tensor = translator.translate(
+        reps_tensor = translator.translate(
             src=src_shard,
             tgt=tgt_shard,
             src_dir=opt.src_dir,

@@ -179,7 +179,8 @@ class Experiment():
 	'''
 	Trains the model on X_train (n*d), y_train (list of labels)
 	'''
-	def train(self, X_train: torch.FloatTensor, y_train: list, max_epochs:int = 10, learning_rate:float = 0.1) -> None:
+	def train(self, X_train: torch.FloatTensor, y_train: list, max_epochs:int = 10, learning_rate:float = 0.1,
+			 X_dev: torch.FloatTensor = torch.zeros(0), y_dev: list = []) -> None:
 		
 		#checking input data dimensions against model
 		X_train = self.x_to_tensor(X_train)
@@ -202,7 +203,7 @@ class Experiment():
 		# Try Adam.
 		optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0002)
 
-		#Runs for either the num of epochs or if no improvement on dev set
+		#Runs for the num of epochs
 		for epoch in range(0, max_epochs):
 
 			#TODO: implement batching:: iterate through batches for each epoch
@@ -227,7 +228,9 @@ class Experiment():
 			optimizer.zero_grad()
 			loss.backward()
 			optimizer.step()
-			#print('finished epoch {}'.format(epoch))
+			print('finished epoch {}'.format(epoch))
+			if len(y_dev) != 0:
+				print(self.metrics(X_dev, y_dev))
 
 		print('Stopped training after {} epochs'.format(max_epochs)) #DEBUGGING
 		return
@@ -274,6 +277,8 @@ class Experiment():
 	def classwise_report(self, X_eval, y_eval, filepath:str='', supress_print=True):
 		y_hat = self.predict(X_eval)
 		n = ((float)(len(y_hat)))
+		
+#		print(y_hat)
 
 		cr = metrics.classification_report(y_eval, y_hat, target_names=[str(c) for c in self._classes], 
 										digits=4)
