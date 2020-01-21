@@ -2,8 +2,17 @@
 
 python3 combine_files.py --input_dir "annotations"
 
-python3 read_conll.py --input "test.conll" --output_sentences "sentences.txt" --output_phrase_tags "phrase_tags.txt"
+python3 filter_conll.py --input "conll_test.txt" --output "conll_test-filter2.txt" --keep_every 2
+
+python3 read_conll.py --input "conll_test.txt" --output_sentences "sentences.txt" --output_phrase_tags "phrase_tags.txt"
 
 python3 OpenNMT-py/tools/apply_bpe.py -c "vocab-en-bpe30000-py.code" -i "sentences.txt" -o "sentences-bpe.txt"
 
 python3 OpenNMT-py/translate.py -model "es-decay-model_step_117000.pt" -src "sentences_test-bpe.txt" -output "testset_predictions.txt" -replace_unk -shard_size=0 -out_reps "reps.pt" -batch_size=1
+
+
+python3 baselines.py --train_tags "phrase_tags_conll_dev.txt" --dev_tags "phrase_tags_conll_test.txt" --test_tags "phrase_tags_conll_test.txt"
+
+python3 experiment.py --train_tags "phrase_tags_conll_dev.txt" --dev_tags "phrase_tags_conll_test.txt" --test_tags "phrase_tags_conll_test.txt" --train_reps "sentence_reps-es-decay-model_step_117000-conll_dev.pt" --dev_reps "sentence_reps-es-decay-model_step_117000-conll_test.pt" --test_reps "sentence_reps-es-decay-model_step_117000-conll_test.pt" --dev_sentences_path "sentences_conll_test.txt" --test_sentences_path "sentences_conll_test.txt" --save_model_path "model.pickle" --output_observations "observations.txt"
+
+java de/pado/sigf/AverageARTDouble ../exampleAverage/observations-es.txt ../exampleAverage/observations-esCopy.txt 10000

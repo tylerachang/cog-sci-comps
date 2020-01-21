@@ -9,7 +9,9 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import sklearn.metrics as metrics
 
+import pickle
 from typing import Sequence, Union
+from utils import *
 
 #TODO: deal with CUDA usage more appropriately???
 class Experiment_Model(torch.nn.Module):
@@ -167,9 +169,6 @@ class Experiment():
 		if isinstance(X, torch.cuda.FloatTensor): return X
 		if isinstance(X, Variable): return X
 
-		
-		#TODO: deal with numpy
-
 		X = torch.stack(X, dim=1)
 		X = X.resize_(X.size()[1], X.size()[2])
 
@@ -179,8 +178,9 @@ class Experiment():
 	'''
 	Trains the model on X_train (n*d), y_train (list of labels)
 	'''
-	def train(self, X_train: torch.FloatTensor, y_train: list, max_epochs:int = 10, learning_rate:float = 0.1,
-			 X_dev: torch.FloatTensor = torch.zeros(0), y_dev: list = []) -> None:
+	def train(self, X_train: torch.FloatTensor, y_train: list, max_epochs:int = 10, learning_rate:float = 0.0002,
+			  X_dev: torch.FloatTensor = torch.zeros(0), y_dev: list = [], dev_sentences_path:str = '',
+			  batch_size = 32, save_path:str = '') -> None:
 		
 		#checking input data dimensions against model
 		X_train = self.x_to_tensor(X_train)
@@ -189,55 +189,79 @@ class Experiment():
 		
 		#to long tensor of dim n*1
 		y_train = self.y_to_tensor(y_train)
-
-		#create training dataset and sampler
-		#training_data = TensorDataset(X_train, y_train)
-		#training_samples = DataLoader(training_data, batch_size=1000, pin_memory=True)
+		
+		# Shuffle training data.
+		n_train = list(y_train.size())[0]
+		row_perm = torch.randperm(n_train)
+		X_train = X_train[row_perm[:], :]
+		y_train = y_train[row_perm[:]]
+		print('Loaded and shuffled training data.')
+		
+		# Get indices for starts of dev sentences. Do not use the BPE processed sentences.
+		dev_sentence_indices = get_sentence_indices(dev_sentences_path)
+		print('Collected dev sentence indices.')
 
 		#loss function currently set to NLL, could be parameterized later
 		criterion = torch.nn.NLLLoss()
 
-		#optimizer currently set to AdaGrad, could be parameterized later
-		#lr = 0.01, should also be tuned
-		optimizer = torch.optim.Adagrad(self.model.parameters(), lr=learning_rate)
-		# Try Adam.
-		optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0002)
+		# Adam optimizer.
+		optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
-		#Runs for the num of epochs
+		# Create batches.
+		X_batches = []
+		y_batches = []
+		i = 0
+		while batch_size*(i+1) <= n_train:
+			X_batches.append(X_train[batch_size*i:batch_size*(i+1), :])
+			y_batches.append(y_train[batch_size*i:batch_size*(i+1)])
+			i += 1
+		# Don't add this last batch because it might be very small, e.g. just one example.
+#		if batch_size*(i+1) > n_train:
+#			X_batches.append(X_train[batch_size*i:n_train, :])
+#			y_batches.append(y_train[batch_size*i:n_train])
+		print('Created batches.')
+		
+		# Run for the num of epochs.
+		best_avg_acc = 0
 		for epoch in range(0, max_epochs):
+			for i in range(len(X_batches)):
+				data = X_batches[i]
+				target = y_batches[i]
 
-			#TODO: implement batching:: iterate through batches for each epoch
-			#for batch_idx, (data, target) in enumerate(training_samples):
+				if torch.cuda.is_available():
+					data, target = data.cuda(), target.cuda()
+
+				#initalize Variables for this epoch
+				data, target = Variable(data), Variable(target)
+
+				#forward pass
+				target_hat = self.model(data)
+
+				#compute loss
+				loss = criterion(target_hat, target)
+
+				#calc gradients and update weights
+				optimizer.zero_grad()
+				loss.backward()
+				optimizer.step()
 			
-			data = X_train
-			target = y_train
-
-			if torch.cuda.is_available():
-				data, target = data.cuda(), target.cuda()
-
-			#initalize Variables for this epoch
-			data, target = Variable(data), Variable(target)
-
-			#forward pass
-			target_hat = self.model(data)
-			
-			#compute loss
-			loss = criterion(target_hat, target)
-
-			#calc gradients and update weights
-			optimizer.zero_grad()
-			loss.backward()
-			optimizer.step()
-			print('finished epoch {}'.format(epoch))
+			print('Finished epoch {}'.format(epoch))
 			if len(y_dev) != 0:
-				print(self.metrics(X_dev, y_dev))
+				y_hat = self.predict(X_dev)
+				avg_acc = sentence_averaged_accuracy(y_hat, y_dev, dev_sentence_indices)
+				print('Dev sentence-averaged accuracy: {}'.format(avg_acc))
+				print('Dev accuracy: {}'.format(
+					accuracy(y_hat, y_dev)))
+				if avg_acc > best_avg_acc:
+					best_avg_acc = avg_acc
+					pickle.dump(self, open(save_path, "wb"))
+					print('Saved to {}'.format(save_path))
 
-		print('Stopped training after {} epochs'.format(max_epochs)) #DEBUGGING
+		print('Stopped training after {} epochs'.format(max_epochs))
 		return
 
 	'''
 	Predicts labels from the model on a given dataset, X_eval (Tensor, n*d)
-	TODO: add batching
 	'''
 	def predict(self, X_eval: torch.FloatTensor) -> list:
 		#check dimensions of input data
@@ -277,8 +301,6 @@ class Experiment():
 	def classwise_report(self, X_eval, y_eval, filepath:str='', supress_print=True):
 		y_hat = self.predict(X_eval)
 		n = ((float)(len(y_hat)))
-		
-#		print(y_hat)
 
 		cr = metrics.classification_report(y_eval, y_hat, target_names=[str(c) for c in self._classes], 
 										digits=4)
@@ -289,14 +311,3 @@ class Experiment():
 			f.write(cr)
 			f.close()
 		return
-
-
-	def accuracy(self, X_eval, y_eval):
-		y_hat = self.predict(X_eval)
-		n = ((float)(len(y_hat)))
-		zipper = list(zip(y_eval, y_hat))
-		accuracy = sum([1 for i, j in zipper if i == j])/n
-		return accuracy
-
-
-
