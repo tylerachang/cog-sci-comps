@@ -25,12 +25,13 @@ def create_parser():
     parser.add_argument('--test_sentences_path')
     parser.add_argument('--save_model_path')
     parser.add_argument('--output_observations')
+    parser.add_argument('--num_epochs', type=int)
     return parser
 
 
 def main(train_reps, dev_reps, test_reps,
          train_tags, dev_tags, test_tags, dev_sentences_path, test_sentences_path,
-         save_model_path, output_observations):
+         save_model_path, output_observations, num_epochs):
     X_train = load_reps(train_reps)
     X_dev = load_reps(dev_reps)
     X_test = load_reps(test_reps)
@@ -49,7 +50,7 @@ def main(train_reps, dev_reps, test_reps,
     # Belinkov (2017) uses 500 hidden dimension and 30 epochs.
     # Blevins (2018) uses 300 hidden dimension.
     experiment = Experiment(classes, input_dim = dims, num_layers = 1, hidden_dims = 500)
-    experiment.train(X_train, y_train, max_epochs=10, X_dev=X_dev, y_dev=y_dev,
+    experiment.train(X_train, y_train, max_epochs=num_epochs, X_dev=X_dev, y_dev=y_dev,
 					dev_sentences_path=dev_sentences_path, batch_size=64, save_path=save_model_path)
 
     best_model = pickle.load(open(save_model_path, "rb"))
@@ -74,4 +75,4 @@ if __name__ == '__main__':
     main(args.train_reps, args.dev_reps, args.test_reps,
          args.train_tags, args.dev_tags, args.test_tags,
          args.dev_sentences_path, args.test_sentences_path,
-         args.save_model_path, args.output_observations)
+         args.save_model_path, args.output_observations, args.num_epochs)
