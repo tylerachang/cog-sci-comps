@@ -11,13 +11,13 @@ def load_reps(reps_path):
     reps = torch.cat((reps[3, :, :], reps[7, :, :]), dim=1)
     return reps
 
-def load_tags(tags_path):
+def load_tags(tags_path, prediction_tag):
     tag_file = open(tags_path, "r")
     tag_lines = tag_file.readlines()
     y = []
     for line in tag_lines:
         tags = line.split()
-        y.append(tags[4])
+        y.append(tags[prediction_tag])
     return y
 
 def accuracy(y_hat, y_eval):

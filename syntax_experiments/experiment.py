@@ -26,12 +26,13 @@ def create_parser():
     parser.add_argument('--save_model_path')
     parser.add_argument('--output_observations')
     parser.add_argument('--num_epochs', type=int)
+    parser.add_argument('--prediction_tag', type=int)
     return parser
 
 
-def main(train_reps, dev_reps, test_reps,
+def run_experiment(train_reps, dev_reps, test_reps,
          train_tags, dev_tags, test_tags, dev_sentences_path, test_sentences_path,
-         save_model_path, output_observations, num_epochs):
+         save_model_path, output_observations, num_epochs, prediction_tag):
     X_train = load_reps(train_reps)
     X_dev = load_reps(dev_reps)
     X_test = load_reps(test_reps)
@@ -40,9 +41,9 @@ def main(train_reps, dev_reps, test_reps,
     n_test = list(X_test.size())[0]
     dims = list(X_train.size())[1]
     
-    y_train = load_tags(train_tags)
-    y_dev = load_tags(dev_tags)
-    y_test = load_tags(test_tags)
+    y_train = load_tags(train_tags, prediction_tag)
+    y_dev = load_tags(dev_tags, prediction_tag)
+    y_test = load_tags(test_tags, prediction_tag)
     
     # All classes that appear in the train or test set.
     classes = list(set(y_train + y_dev + y_test))
@@ -72,7 +73,7 @@ def main(train_reps, dev_reps, test_reps,
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
-    main(args.train_reps, args.dev_reps, args.test_reps,
+    run_experiment(args.train_reps, args.dev_reps, args.test_reps,
          args.train_tags, args.dev_tags, args.test_tags,
          args.dev_sentences_path, args.test_sentences_path,
-         args.save_model_path, args.output_observations, args.num_epochs)
+         args.save_model_path, args.output_observations, args.num_epochs, args.prediction_tag)

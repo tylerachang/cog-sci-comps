@@ -10,15 +10,16 @@ def create_parser():
     parser.add_argument('--train_tags')
     parser.add_argument('--dev_tags')
     parser.add_argument('--test_tags')
+    parser.add_argument('--prediction_tag', type=int)
     return parser
 
-def load_words_and_tags(tags_path):
+def load_words_and_tags(tags_path, prediction_tag):
     tag_file = open(tags_path, "r")
     tag_lines = tag_file.readlines()
     y = []
     for line in tag_lines:
         tags = line.split()
-        y.append((tags[0], tags[1]))
+        y.append((tags[0], tags[prediction_tag]))
     return y
 
 def most_frequent(items):
@@ -68,11 +69,11 @@ def per_word_mft(y_train, y_test):
     print('Per-word MFT accuracy: {}'.format(test_score/len(y_test)))
 
     
-def main(train_tags, dev_tags, test_tags):
+def main(train_tags, dev_tags, test_tags, prediction_tag):
     
-    y_train = load_words_and_tags(train_tags)
-    y_dev = load_words_and_tags(dev_tags)
-    y_test = load_words_and_tags(test_tags)
+    y_train = load_words_and_tags(train_tags, prediction_tag)
+    y_dev = load_words_and_tags(dev_tags, prediction_tag)
+    y_test = load_words_and_tags(test_tags, prediction_tag)
     
     # All classes that appear in the train or test set.
     classes = list(set(y_train + y_dev + y_test))
@@ -84,4 +85,4 @@ def main(train_tags, dev_tags, test_tags):
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
-    main(args.train_tags, args.dev_tags, args.test_tags)
+    main(args.train_tags, args.dev_tags, args.test_tags, args.prediction_tag)
