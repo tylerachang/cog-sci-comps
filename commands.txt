@@ -1,3 +1,15 @@
+# Various commands. Navigate to the correct directory and run one of these.
+
+python filter_data.py -i "UNv1.0.testset.en" -o "UNv1.0.testset-filter2.en" --keep_every 2
+
+python shuffle.py -i "UNv1.0.6way-bpe.en" -o "UNv1.0.6way-bpe-shuffled.en.txt" --create_permutation 1
+
+python parse_logs.py -i "en-to-zh.txt" -o "output.txt" --read_perplexity 1
+
+python parse_logs_steps.py -i "en-to-zh.txt" -o "output.txt" --keep_every 3
+
+
+
 ./conll-2012/v3/scripts/skeleton2conll.sh -D "ontonotes-release-5.0/data/files/data" "conll-2012"
 
 python3 combine_files.py --input_dir "annotations"
