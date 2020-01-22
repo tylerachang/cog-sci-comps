@@ -4,12 +4,13 @@ tab-separated values: word POS parent gp ggp.
 """
 
 import argparse
+from utils import *
 
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_tags')
-    parser.add_argument('--dev_tags')
     parser.add_argument('--test_tags')
+    parser.add_argument('--test_sentences_path')
     parser.add_argument('--prediction_tag', type=int)
     return parser
 
@@ -30,20 +31,18 @@ def most_frequent(items):
         counts[item] += 1
     return max(counts,key=counts.get)
 
-def most_frequent_tag(y_train, y_test):
-    y_train = [tag for (word, tag) in y_train]
-    y_test = [tag for (word, tag) in y_test]
+def most_frequent_tag(xy_train, x_test):
+    y_train = [tag for (word, tag) in xy_train]
     mft = most_frequent(y_train)
-    test_score = 0
-    for tag in y_test:
-        if tag == mft:
-            test_score += 1
-    print('MFT accuracy: {}'.format(test_score/len(y_test)))
+    predictions = []
+    for tag in x_test:
+        predictions.append(mft)
+    return predictions
     
-def per_word_mft(y_train, y_test):
+def per_word_mft(xy_train, x_test):
     # Map each word to a list of tags.
     word_tags_dict = dict()
-    for (word, tag) in y_train:
+    for (word, tag) in xy_train:
         word_tags_dict.setdefault(word, [])
         word_tags_dict[word].append(tag)
     
@@ -53,36 +52,37 @@ def per_word_mft(y_train, y_test):
         word_tag_dict[word] = most_frequent(word_tags_dict[word])
 
     # Get the overall MFT to use for novel words.
-    y_train_tags = [tag for (word, tag) in y_train]
+    y_train_tags = [tag for (word, tag) in xy_train]
     mft = most_frequent(y_train_tags)
 
     # Make predictions.
-    test_score = 0
-    for (word, tag) in y_test:
+    predictions = []
+    for word in x_test:
         guess = ''
         if word in word_tag_dict.keys():
             guess = word_tag_dict[word]
         else:
             guess = mft
-        if tag == guess:
-            test_score += 1
-    print('Per-word MFT accuracy: {}'.format(test_score/len(y_test)))
-
+        predictions.append(guess)
+    return predictions
     
-def main(train_tags, dev_tags, test_tags, prediction_tag):
     
-    y_train = load_words_and_tags(train_tags, prediction_tag)
-    y_dev = load_words_and_tags(dev_tags, prediction_tag)
-    y_test = load_words_and_tags(test_tags, prediction_tag)
+def main(train_tags, test_tags, test_sentences_path, prediction_tag):
     
-    # All classes that appear in the train or test set.
-    classes = list(set(y_train + y_dev + y_test))
+    xy_train = load_words_and_tags(train_tags, prediction_tag)
+    x_test = load_tags(test_tags, 0)
+    y_test = load_tags(test_tags, prediction_tag)
     
-    most_frequent_tag(y_train, y_test)
-    per_word_mft(y_train, y_test)
+    mft_y_hat = most_frequent_tag(xy_train, x_test)
+    per_word_mft_y_hat = per_word_mft(xy_train, x_test)
+    
+    print('MFT sentence-averaged accuracy: {}'.format(
+        sentence_averaged_accuracy(mft_y_hat, y_test, get_sentence_indices(test_sentences_path))))
+    print('Per-word MFT sentence-averaged accuracy: {}'.format(
+        sentence_averaged_accuracy(per_word_mft_y_hat, y_test, get_sentence_indices(test_sentences_path))))
     
     
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
-    main(args.train_tags, args.dev_tags, args.test_tags, args.prediction_tag)
+    main(args.train_tags, args.test_tags, args.test_sentences_path, args.prediction_tag)

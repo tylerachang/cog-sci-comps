@@ -11,6 +11,7 @@ def load_reps(reps_path):
     reps = torch.cat((reps[3, :, :], reps[7, :, :]), dim=1)
     return reps
 
+# Use prediction tag = 0 to get the word.
 def load_tags(tags_path, prediction_tag):
     tag_file = open(tags_path, "r")
     tag_lines = tag_file.readlines()
