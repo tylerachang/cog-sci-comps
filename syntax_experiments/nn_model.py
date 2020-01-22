@@ -263,7 +263,7 @@ class Experiment():
 				
 			if no_improvement > 10:
 				print('Stopped training after {} epochs'.format(epoch+1))
-				break
+				return
 
 		print('Stopped training after the max of {} epochs'.format(max_epochs))
 		return
