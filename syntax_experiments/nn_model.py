@@ -221,8 +221,9 @@ class Experiment():
 #			y_batches.append(y_train[batch_size*i:n_train])
 		print('Created batches.')
 		
-		# Run for the num of epochs.
+		# Run for the num of epochs or until 10 epochs with no improvement.
 		best_avg_acc = 0
+		no_improvement = 0
 		for epoch in range(0, max_epochs):
 			for i in range(len(X_batches)):
 				data = X_batches[i]
@@ -253,11 +254,18 @@ class Experiment():
 				print('Dev accuracy: {}'.format(
 					accuracy(y_hat, y_dev)))
 				if avg_acc > best_avg_acc:
+					no_improvement = 0
 					best_avg_acc = avg_acc
 					pickle.dump(self, open(save_path, "wb"))
 					print('Saved to {}'.format(save_path))
+				else:
+					no_improvement += 1
+				
+			if no_improvement > 10:
+				print('Stopped training after {} epochs'.format(epoch+1))
+				break
 
-		print('Stopped training after {} epochs'.format(max_epochs))
+		print('Stopped training after the max of {} epochs'.format(max_epochs))
 		return
 
 	'''
