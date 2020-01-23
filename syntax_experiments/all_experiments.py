@@ -26,13 +26,13 @@ def main(directory, num_epochs):
     dev_sentences_path = 'drive/My Drive/Cog Sci Comps/CoNLL-2012 Data/sentences_conll_train-filter8.txt'
     test_sentences_path = 'drive/My Drive/Cog Sci Comps/CoNLL-2012 Data/sentences_conll_test.txt'
     
-    for i in range(4):
+    for i in range(1, 5):
         for nmt_model in nmt_models:
             reps_path = 'drive/My Drive/Cog Sci Comps/Sentence Representations/sentence_reps-' + nmt_model
             train_reps = reps_path + train_suffix + '.pt'
             dev_reps = reps_path + dev_suffix + '.pt'
             test_reps = reps_path + test_suffix + '.pt'
-            prediction_tag = i+1
+            prediction_tag = i
             
             print('RUNNING MODEL {0} FOR TAG {1}'.format(nmt_model, prediction_tag))
             save_model_path = '{0}/syntax-{1}-tag{2}.pickle'.format(directory, nmt_model, prediction_tag)

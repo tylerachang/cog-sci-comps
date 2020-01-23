@@ -30,3 +30,5 @@ python3 experiment.py --train_tags "phrase_tags_conll_dev.txt" --dev_tags "phras
 python3 all_experiments.py --directory "Syntax Experiments/experiment1" --num_epochs 40
 
 java de/pado/sigf/AverageARTDouble ../exampleAverage/observations-es.txt ../exampleAverage/observations-esCopy.txt 10000
+
+python parse_experiment_logs.py -i "experiment_log.txt" -o "output.txt"
