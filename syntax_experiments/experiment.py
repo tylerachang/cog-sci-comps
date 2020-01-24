@@ -32,10 +32,10 @@ def create_parser():
 
 def run_experiment(train_reps, dev_reps, test_reps,
          train_tags, dev_tags, test_tags, dev_sentences_path, test_sentences_path,
-         save_model_path, output_observations, num_epochs, prediction_tag):
-    X_train = load_reps(train_reps)
-    X_dev = load_reps(dev_reps)
-    X_test = load_reps(test_reps)
+         save_model_path, output_observations, num_epochs, prediction_tag, layers=[3]):
+    X_train = load_reps(train_reps, layers)
+    X_dev = load_reps(dev_reps, layers)
+    X_test = load_reps(test_reps, layers)
     
     n_train = list(X_train.size())[0]
     n_test = list(X_test.size())[0]

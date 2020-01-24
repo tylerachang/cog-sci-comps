@@ -14,6 +14,8 @@ def main(directory, num_epochs):
     
     nmt_models = ['zh-decay-model_step_147000', 'ru-decay-model_step_149000', 'fr-decay-model_step_147000',
            'es-decay-model_step_117000', 'en-decay-model_step_150000', 'ar-decay-model_step_149000']
+    
+    layers = [3]
 
     train_suffix = '-conll_dev'
     dev_suffix = '-conll_train-filter8'
@@ -39,7 +41,7 @@ def main(directory, num_epochs):
             output_observations = '{0}/observations-{1}-tag{2}.txt'.format(directory, nmt_model, prediction_tag)
             run_experiment(train_reps, dev_reps, test_reps,
                            train_tags, dev_tags, test_tags, dev_sentences_path, test_sentences_path,
-                           save_model_path, output_observations, num_epochs, prediction_tag)
+                           save_model_path, output_observations, num_epochs, prediction_tag, layers)
 
 
 if __name__ == '__main__':

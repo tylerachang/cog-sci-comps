@@ -4,11 +4,12 @@ Utility functions for syntax experiments.
 
 import torch
 
-def load_reps(reps_path):
+def load_reps(reps_path, layers:list=[3]):
     reps = torch.load(reps_path)
-    # Concatenate the last layer for hidden and context.
-    # 0-3 increasing depth, 4-7 increasing depth.
-    reps = torch.cat((reps[3, :, :], reps[7, :, :]), dim=1)
+    # Can concatenate layers.
+    # 0-3 increasing depth hidden states, 4-7 increasing depth cell states.
+    # Actual decoder only uses deepest hidden state (index 3).
+    reps = torch.cat(tuple(reps[i, :, :] for i in layers), dim=1)
     return reps
 
 # Use prediction tag = 0 to get the word.

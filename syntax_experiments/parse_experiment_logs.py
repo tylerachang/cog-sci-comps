@@ -34,9 +34,15 @@ def create_parser():
     return parser
 
 def main(infile, outfile):
+    count = 0
     for line in infile:
-        if "Test sentence-averaged accuracy" in line:
-            outfile.write(line.split()[-1] + "\n")
+        if 'Test sentence-averaged accuracy' in line:
+            outfile.write(line.split()[-1])
+            if count % 6 == 5:
+                outfile.write('\n')
+            else:
+                outfile.write('\t')
+            count += 1
 
     
 if __name__ == '__main__':
