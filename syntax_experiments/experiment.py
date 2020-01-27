@@ -29,6 +29,25 @@ def create_parser():
     parser.add_argument('--prediction_tag', type=int)
     return parser
 
+'''Wrapper for evaluate_model that takes the test data paths as input.'''
+def evaluate_model_with_paths(model_path, test_reps, test_tags, test_sentences_path,
+                              prediction_tag, layers=[3]):
+    X_test = load_reps(test_reps, layers)
+    y_test = load_tags(test_tags, prediction_tag)
+    return evaluate_model(model_path, X_test, y_test, test_sentences_path)
+
+def evaluate_model(model_path, X_test, y_test, test_sentences_path):
+    model = pickle.load(open(model_path, "rb"))
+    y_test_hat = model.predict(X_test)
+    test_sentence_indices = get_sentence_indices(test_sentences_path)
+	
+    sentence_accs = sentence_accuracies(y_test_hat, y_test, test_sentence_indices)
+    print('Test sentence-averaged accuracy: {}'.format(sum(sentence_accs)/len(sentence_accs)))
+    print('Test accuracy: {}'.format(
+        accuracy(y_test_hat, y_test)))
+    # Returns the sentence accuracies list.
+    return sentence_accs
+
 
 def run_experiment(train_reps, dev_reps, test_reps,
          train_tags, dev_tags, test_tags, dev_sentences_path, test_sentences_path,
@@ -54,14 +73,7 @@ def run_experiment(train_reps, dev_reps, test_reps,
     experiment.train(X_train, y_train, max_epochs=num_epochs, X_dev=X_dev, y_dev=y_dev,
 					dev_sentences_path=dev_sentences_path, batch_size=64, save_path=save_model_path)
 
-    best_model = pickle.load(open(save_model_path, "rb"))
-    y_test_hat = best_model.predict(X_test)
-    test_sentence_indices = get_sentence_indices(test_sentences_path)
-	
-    sentence_accs = sentence_accuracies(y_test_hat, y_test, test_sentence_indices)
-    print('Test sentence-averaged accuracy: {}'.format(sum(sentence_accs)/len(sentence_accs)))
-    print('Test accuracy: {}'.format(
-        accuracy(y_test_hat, y_test)))
+    sentence_accs = evaluate_model(save_model_path, X_test, y_test, test_sentences_path)
     
     outfile = codecs.open(output_observations, 'w', encoding='utf-8')
     for acc in sentence_accs:

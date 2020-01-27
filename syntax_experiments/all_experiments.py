@@ -3,6 +3,7 @@ Run all syntax experiments.
 """
 
 from experiment import *
+import os.path
 
 def create_parser():
     parser = argparse.ArgumentParser()
@@ -30,15 +31,21 @@ def main(directory, num_epochs):
     
     for i in range(1, 5):
         for nmt_model in nmt_models:
+            output_observations = '{0}/observations-{1}-tag{2}.txt'.format(directory, nmt_model, prediction_tag)
+            save_model_path = '{0}/syntax-{1}-tag{2}.pickle'.format(directory, nmt_model, prediction_tag)
             reps_path = 'drive/My Drive/Cog Sci Comps/Sentence Representations/sentence_reps-' + nmt_model
             train_reps = reps_path + train_suffix + '.pt'
             dev_reps = reps_path + dev_suffix + '.pt'
             test_reps = reps_path + test_suffix + '.pt'
             prediction_tag = i
             
+            if os.path. exists(output_observations):
+                # Already trained this model for this experiment.
+                evaluate_model_with_paths(save_model_path, test_reps, test_tags, test_sentences_path,
+                                          prediction_tag, layers):
+                continue
+            
             print('RUNNING MODEL {0} FOR TAG {1}'.format(nmt_model, prediction_tag))
-            save_model_path = '{0}/syntax-{1}-tag{2}.pickle'.format(directory, nmt_model, prediction_tag)
-            output_observations = '{0}/observations-{1}-tag{2}.txt'.format(directory, nmt_model, prediction_tag)
             run_experiment(train_reps, dev_reps, test_reps,
                            train_tags, dev_tags, test_tags, dev_sentences_path, test_sentences_path,
                            save_model_path, output_observations, num_epochs, prediction_tag, layers)
