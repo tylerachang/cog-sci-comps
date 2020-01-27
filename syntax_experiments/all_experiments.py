@@ -16,7 +16,7 @@ def main(directory, num_epochs):
     nmt_models = ['zh-decay-model_step_147000', 'ru-decay-model_step_149000', 'fr-decay-model_step_147000',
            'es-decay-model_step_117000', 'en-decay-model_step_150000', 'ar-decay-model_step_149000']
     
-    layers = [3]
+    layers = [3,7]
 
     train_suffix = '-conll_dev'
     dev_suffix = '-conll_train-filter8'
