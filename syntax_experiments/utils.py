@@ -5,6 +5,9 @@ Utility functions for syntax experiments.
 import torch
 
 def load_reps(reps_path, layers:list=[3]):
+    if not isinstance(reps_path, str):
+        # Can accept a raw tensor as well, just returns that tensor.
+        return reps_path
     reps = torch.load(reps_path)
     # Can concatenate layers.
     # 0-3 increasing depth hidden states, 4-7 increasing depth cell states.
