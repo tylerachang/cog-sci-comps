@@ -9,9 +9,10 @@ def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--directory')
     parser.add_argument('--num_epochs', type=int)
+    parser.add_argument('--evaluation', type=bool)
     return parser
 
-def main(directory, num_epochs):
+def main(directory, num_epochs, is_evaluation):
     
     nmt_models = ['zh-decay-model_step_147000', 'ru-decay-model_step_149000', 'fr-decay-model_step_147000',
            'es-decay-model_step_117000', 'en-decay-model_step_150000', 'ar-decay-model_step_149000']
@@ -34,8 +35,12 @@ def main(directory, num_epochs):
         train_reps = reps_path + train_suffix + '.pt'
         dev_reps = reps_path + dev_suffix + '.pt'
         test_reps = reps_path + test_suffix + '.pt'
-        X_train = load_reps(train_reps, layers)
-        X_dev = load_reps(dev_reps, layers)
+        if is_evaluation:
+            X_train = None
+            X_dev = None
+        else:
+            X_train = load_reps(train_reps, layers)
+            X_dev = load_reps(dev_reps, layers)
         X_test = load_reps(test_reps, layers)
         
         for i in range(1, 5):
@@ -46,9 +51,10 @@ def main(directory, num_epochs):
             if os.path. exists(output_observations):
                 # Already trained this model for this experiment.
                 # Can test the existing models:
-#                print('TESTING EXISTING MODEL {0} FOR TAG {1}'.format(nmt_model, prediction_tag))
-#                evaluate_model_with_paths(save_model_path, test_reps, test_tags, test_sentences_path,
-#                                          prediction_tag, layers)
+                if is_evaluation:
+                    print('TESTING EXISTING MODEL {0} FOR TAG {1}'.format(nmt_model, prediction_tag))
+                    evaluate_model_with_paths(save_model_path, test_reps, test_tags, test_sentences_path,
+                                              prediction_tag, layers)
                 continue
             
             print('RUNNING MODEL {0} FOR TAG {1}'.format(nmt_model, prediction_tag))
@@ -62,4 +68,4 @@ def main(directory, num_epochs):
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
-    main(args.directory, args.num_epochs)
+    main(args.directory, args.num_epochs, args.evaluation)
