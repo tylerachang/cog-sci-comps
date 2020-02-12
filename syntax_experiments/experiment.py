@@ -30,11 +30,11 @@ def create_parser():
     return parser
 
 '''Wrapper for evaluate_model that takes the test data paths as input.'''
-def evaluate_model_with_paths(model_path, test_reps, test_tags, test_sentences_path,
+def evaluate_model_with_paths(model_path, test_reps, test_tags, test_sentences_path, output_predictions,
                               prediction_tag, layers=[3]):
     X_test = load_reps(test_reps, layers)
     y_test = load_tags(test_tags, prediction_tag)
-    return evaluate_model(model_path, X_test, y_test, test_sentences_path)
+    return evaluate_model(model_path, X_test, y_test, test_sentences_path, output_predictions)
 
 def evaluate_model(model_path, X_test, y_test, test_sentences_path, output_predictions):
     model = pickle.load(open(model_path, "rb"))

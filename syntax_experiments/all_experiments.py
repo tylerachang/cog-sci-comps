@@ -55,7 +55,7 @@ def main(directory, num_epochs, is_evaluation):
                 if is_evaluation:
                     print('TESTING EXISTING MODEL {0} FOR TAG {1}'.format(nmt_model, prediction_tag))
                     evaluate_model_with_paths(save_model_path, X_test, test_tags, test_sentences_path,
-                                              prediction_tag, layers)
+                                              output_predictions, prediction_tag, layers)
                 continue
             
             print('RUNNING MODEL {0} FOR TAG {1}'.format(nmt_model, prediction_tag))
