@@ -46,6 +46,7 @@ def main(directory, num_epochs, is_evaluation):
         for i in range(1, 5):
             prediction_tag = i
             output_observations = '{0}/observations-{1}-tag{2}.txt'.format(directory, nmt_model, prediction_tag)
+            output_predictions = '{0}/predictions-{1}-tag{2}.txt'.format(directory, nmt_model, prediction_tag)
             save_model_path = '{0}/syntax-{1}-tag{2}.pickle'.format(directory, nmt_model, prediction_tag)
             
             if os.path. exists(output_observations):
@@ -62,7 +63,8 @@ def main(directory, num_epochs, is_evaluation):
             # Could also pass in the paths instead (train_reps, dev_reps, test_reps).
             run_experiment(X_train, X_dev, X_test,
                            train_tags, dev_tags, test_tags, dev_sentences_path, test_sentences_path,
-                           save_model_path, output_observations, num_epochs, prediction_tag, layers)
+                           save_model_path, output_observations, output_predictions, num_epochs,
+                           prediction_tag, layers)
 
 
 if __name__ == '__main__':
