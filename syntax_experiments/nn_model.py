@@ -299,9 +299,9 @@ class Experiment():
 		zipper = list(zip(y_eval, y_hat))
 
 		accuracy = sum([1 for i, j in zipper if i == j])/n
-		f1 = metrics.f1_score(y_hat, y_eval, average='micro')
-		precision = metrics.precision_score(y_hat, y_eval, average='micro')
-		recall = metrics.recall_score(y_hat, y_eval, average='micro')
+		f1 = metrics.f1_score(y_eval, y_hat, average='micro')
+		precision = metrics.precision_score(y_eval, y_hat, average='micro')
+		recall = metrics.recall_score(y_eval, y_hat, average='micro')
 		
 		return accuracy, f1, precision, recall
 

@@ -31,4 +31,6 @@ python3 all_experiments.py --directory "Syntax Experiments/experiment1" --num_ep
 
 java de/pado/sigf/AverageARTDouble ../exampleAverage/observations-es.txt ../exampleAverage/observations-esCopy.txt 10000
 
-python parse_experiment_logs.py -i "experiment_log.txt" -o "output.txt"
+python3 parse_experiment_logs.py -i "experiment_log.txt" -o "output.txt"
+
+python3 confusion_matrix.py --predictions_file "predictions.txt"
