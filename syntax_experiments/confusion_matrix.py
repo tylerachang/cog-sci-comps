@@ -11,6 +11,7 @@ import copy
 import argparse
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import normalize
 import sklearn.metrics as metrics
 import numpy as np
 
@@ -56,10 +57,17 @@ def main(predictions_file):
     
     # Plot matrix.
     confusion = confusion_matrix(y, y_hat)
-    heatmap = plt.imshow(confusion)
+    # Normalize each row (actual, along axis 1) or column (predicted, along axis 0).
+#    confusion = normalize(confusion, axis=1, norm='l1')
+    heatmap = plt.imshow(confusion, cmap = plt.cm.Purples)
     plt.colorbar(heatmap)
+    labels = np.unique(y + y_hat)
+    axis_values = list(range(labels.size))
+    plt.xlabel('Predicted')
+    plt.xticks(axis_values, labels, rotation='vertical')
+    plt.ylabel('Actual')
+    plt.yticks(axis_values, labels)
     plt.show()
-    
 #    print(confusion)
 
     
