@@ -43,14 +43,17 @@ def compute_f1(infile, outfile, language, tag_type):
     for tag in classes:
         class_y = []
         class_y_hat = []
+        
+        # Treat as a binary classification.
         for i in range(len(y)):
-            if y[i] == tag:
-                class_y.append(y[i])
-                class_y_hat.append(y_hat[i])
-        # Use micro average because classes are imbalanced.
-        class_f1 = metrics.f1_score(class_y, class_y_hat, average='micro')
+            class_y.append(y[i] == tag)
+            class_y_hat.append(y_hat[i] == tag)
+        class_f1 = metrics.f1_score(class_y, class_y_hat, average='binary', zero_division=0)
+        class_precision = metrics.precision_score(class_y, class_y_hat, average='binary', zero_division=0)
+        class_recall = metrics.recall_score(class_y, class_y_hat, average='binary', zero_division=0)        
+        class_acc = metrics.accuracy_score(class_y, class_y_hat)
         f1_dict[tag] = class_f1
-        outfile.write('\n{0}\t{1}\t{2}\t{3}'.format(tag_type, language, tag, class_f1))
+        outfile.write('\n{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}'.format(tag_type, language, tag, class_f1, class_precision, class_recall, class_acc))
 #        print('{0} F1: {1}'.format(tag, class_f1))
 #    print(sorted(f1_dict, key=f1_dict.get))
     
@@ -109,7 +112,7 @@ def main(predictions_file):
         predictions_files.append(predictions_file)
         
     outfile = codecs.open('output.txt', 'w')
-    outfile.write('Type\tLanguage\tTag\tF1')
+    outfile.write('Type\tLanguage\tTag\tF1\tPrecision\tRecall\tAcc')
     for file in predictions_files:
         language, tag_type = get_language_and_tag_type(file)            
         infile = codecs.open(file, 'r')
