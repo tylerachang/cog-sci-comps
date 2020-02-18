@@ -54,6 +54,10 @@ def compute_f1(infile, outfile, language, tag_type):
         class_acc = metrics.accuracy_score(class_y, class_y_hat)
         f1_dict[tag] = class_f1
         outfile.write('\n{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}'.format(tag_type, language, tag, class_f1, class_precision, class_recall, class_acc))
+        
+        # Code to compute proportions of each phrase tag.
+#        outfile.write('\n{0}\t{1}\t{2}'.format(tag_type, tag, sum(class_y)/len(class_y)))
+        
 #        print('{0} F1: {1}'.format(tag, class_f1))
 #    print(sorted(f1_dict, key=f1_dict.get))
     
