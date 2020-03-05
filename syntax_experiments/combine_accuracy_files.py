@@ -39,7 +39,7 @@ def main(reading_sentence_accuracies):
     final_sources = []
     final_sentences = []
     for index in sentence_indices:
-        final_sentences.append(sentences[index-1][:-1])
+        final_sentences.append(sentences[index-1].strip())
         final_sources.append(sources[index])
     # Move the first sentence to the end so that they are in the correct order.
     first = final_sentences.pop(0)
