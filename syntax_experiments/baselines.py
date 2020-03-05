@@ -45,7 +45,7 @@ def per_word_mft(xy_train, x_test):
     for (word, tag) in xy_train:
         word_tags_dict.setdefault(word, [])
         word_tags_dict[word].append(tag)
-    
+
     # Map each word to its most frequent tag.
     word_tag_dict = dict()
     for word in word_tags_dict.keys():
@@ -64,6 +64,7 @@ def per_word_mft(xy_train, x_test):
         else:
             guess = mft
         predictions.append(guess)
+ 
     return predictions
     
     
