@@ -1,5 +1,5 @@
 """
-Parse the logs outputted by OpenNMT-py.
+Parse the machine translation logs outputted by OpenNMT-py.
 Reads evaluation accuracies or perplexities.
 """
 

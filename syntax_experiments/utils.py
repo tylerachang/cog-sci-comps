@@ -50,6 +50,7 @@ def sentence_accuracies(y_hat, y_eval, dev_sentence_indices):
 	sentence_accs.append(curr_correct/curr_count)
 	return sentence_accs
 
+# Return a list of indices corresponding to the starts of sentences.
 def get_sentence_indices(sentences_path):
 		sentence_indices = []
 		sentences_file = open(sentences_path, "r")
