@@ -32,19 +32,6 @@ def create_parser():
     parser.add_argument('--predictions_file')
     return parser
 
-# Reads a predictions file and outputs y and y_hat lists.
-def read_predictions(filepath):
-    infile = codecs.open(filepath, 'r')
-    y = []
-    y_hat = []
-    for line in infile:
-        if line.strip() == '':
-            continue
-        prediction = line.split()
-        y_hat.append(prediction[0])
-        y.append(prediction[1])
-    return y, y_hat
-
 # Reads a predictions file and outputs a list of 0s and 1s (incorrect and correct).
 def read_predictions_acc(filepath):
     infile = codecs.open(filepath, 'r')

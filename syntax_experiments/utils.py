@@ -3,6 +3,7 @@ Utility functions for syntax experiments.
 """
 
 import torch
+import codecs
 
 def load_reps(reps_path, layers:list=[3]):
     if not isinstance(reps_path, str):
@@ -61,4 +62,17 @@ def get_sentence_indices(sentences_path):
 				sentence_indices.append(i)
 			prev_sentence = sentences[i]
 		return sentence_indices
+    
+# Reads a predictions file and outputs y and y_hat lists.
+def read_predictions(filepath):
+    infile = codecs.open(filepath, 'r')
+    y = []
+    y_hat = []
+    for line in infile:
+        if line.strip() == '':
+            continue
+        prediction = line.split()
+        y_hat.append(prediction[0])
+        y.append(prediction[1])
+    return y, y_hat
 	
