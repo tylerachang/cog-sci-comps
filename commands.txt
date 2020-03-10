@@ -38,4 +38,6 @@ python3 parse_predictions.py --predictions_file "predictions.txt"
 python3 sentence_error_report.py --sentence_id 0
 
 # Run from the Stanford parser directory.
-java -cp "*" edu.stanford.nlp.parser.lexparser.LexicalizedParser -sentences newline edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz sentences_conll_test.txt > output.txt
+java -cp "*" edu.stanford.nlp.parser.lexparser.LexicalizedParser -sentences newline edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz sentences_conll_test.txt > test_output.txt
+
+python3 parse_stanford_output.py --input "sentences_conll_test_stanford.txt" --true_tags "phrase_tags_conll_test.txt"
