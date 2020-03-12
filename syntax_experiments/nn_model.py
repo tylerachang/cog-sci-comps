@@ -261,7 +261,7 @@ class Experiment():
 				else:
 					no_improvement += 1
 				
-			if no_improvement > 10:
+			if no_improvement >= 10:
 				print('Stopped training after {} epochs'.format(epoch+1))
 				return
 
