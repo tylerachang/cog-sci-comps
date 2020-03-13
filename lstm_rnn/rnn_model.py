@@ -18,14 +18,14 @@ HIDDEN_DIM = 500
 NUM_HIDDEN = 4
 LEARNING_RATE = 0.0002
 MAX_EPOCHS = 1000
-batch_size = 64
+BATCH_SIZE = 64
 
 
 def prepare_sequence(seq, to_ix):
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
 
-def create_input_tensor_batches(training_data, word_to_ix, batch_size):
+def create_input_tensor_batches(training_data, word_to_ix, batch_size, include_last_batch):
     sentences = []
     batch_max_lengths = []
     curr_max_length = 0
@@ -37,13 +37,21 @@ def create_input_tensor_batches(training_data, word_to_ix, batch_size):
         if i % batch_size == batch_size-1:
             batch_max_lengths.append(curr_max_length)
             curr_max_length = 0
+    batch_max_lengths.append(curr_max_length)
 #    print('BATCH MAX SENTENCE LENGTHS: {}'.format(batch_max_lengths))
     
     X_batches = []
     for batch_num in range(len(batch_max_lengths)):
+        if batch_num == len(batch_max_lengths)-1:
+            if include_last_batch:
+                this_batch_size = len(training_data) % batch_size
+            else:
+                break
+        else:
+            this_batch_size = batch_size
         max_length = batch_max_lengths[batch_num]
-        sentences_tensor = torch.zeros(batch_size, max_length).long()
-        for sentence_num in range(batch_size):
+        sentences_tensor = torch.zeros(this_batch_size, max_length).long()
+        for sentence_num in range(this_batch_size):
             sentence = sentences[batch_num*batch_size+sentence_num]
             sentence_length = len(sentence)
             for word_index in range(sentence_length):
@@ -51,7 +59,7 @@ def create_input_tensor_batches(training_data, word_to_ix, batch_size):
         X_batches.append(sentences_tensor)
     return X_batches
     
-def create_target_tensor_batches(training_data, tag_to_ix, batch_size):
+def create_target_tensor_batches(training_data, tag_to_ix, batch_size, include_last_batch):
     targets = []
     for sentence, tag in training_data:
         targets.append(tag_to_ix[tag])
@@ -62,6 +70,8 @@ def create_target_tensor_batches(training_data, tag_to_ix, batch_size):
     while batch_size*(i+1) <= len(training_data):
         y_batches.append(targets_tensor[batch_size*i:batch_size*(i+1)])
         i += 1
+    if len(training_data) % batch_size != 0:
+        y_batches.append(targets_tensor[len(training_data) - len(training_data) % batch_size:len(training_data)])
     return y_batches
         
 
@@ -97,9 +107,14 @@ def predict(X_batches, model, tag_to_ix):
             predictions.append(ix_to_tag[max_indices[j].item()])
     return predictions
 
-def create_true_y(data, batch_size):
+def create_true_y(data, batch_size, include_last_batch):
     tags = []
-    for i in range(len(data) - len(data) % batch_size):
+    how_many_include = 0
+    if include_last_batch:
+        how_many_include = len(data)
+    else:
+        how_many_include = len(data) - len(data) % batch_size
+    for i in range(how_many_include):
         tags.append(data[i][1])
     return tags
 
@@ -140,6 +155,7 @@ class LSTMModel(nn.Module):
 # Run an RNN experiment for a given tag and experiment.
 # Tag num should be 0-3.
 def run_rnn_experiment(tag_num, experiment_num):
+    batch_size = BATCH_SIZE
     output_directory = 'drive/My Drive/Cog Sci Comps/RNN Experiments/experiment{}'.format(experiment_num)
     training_data = read_data("drive/My Drive/Cog Sci Comps/CoNLL-2012 Data/sentences_conll_dev-bpe.txt",
                               "drive/My Drive/Cog Sci Comps/CoNLL-2012 Data/phrase_tags_conll_dev.txt", tag_num)
@@ -164,17 +180,18 @@ def run_rnn_experiment(tag_num, experiment_num):
         if tag not in tag_to_ix:
             tag_to_ix[tag] = len(tag_to_ix)
         
-    training_x = create_input_tensor_batches(training_data, word_to_ix, batch_size)
-    training_y = create_target_tensor_batches(training_data, tag_to_ix, batch_size)
-    dev_x = create_input_tensor_batches(dev_data, word_to_ix, batch_size)
-    dev_y = create_target_tensor_batches(dev_data, tag_to_ix, batch_size)
-    dev_true_y = create_true_y(dev_data, batch_size)
-    test_x = create_input_tensor_batches(test_data, word_to_ix, batch_size)
-    test_y = create_target_tensor_batches(test_data, tag_to_ix, batch_size)
-    test_true_y = create_true_y(test_data, batch_size)
+    training_x = create_input_tensor_batches(training_data, word_to_ix, batch_size, False)
+    training_y = create_target_tensor_batches(training_data, tag_to_ix, batch_size, False)
+    dev_x = create_input_tensor_batches(dev_data, word_to_ix, batch_size, False)
+    dev_y = create_target_tensor_batches(dev_data, tag_to_ix, batch_size, False)
+    dev_true_y = create_true_y(dev_data, batch_size, False)
+    test_x = create_input_tensor_batches(test_data, word_to_ix, batch_size, True)
+    test_y = create_target_tensor_batches(test_data, tag_to_ix, batch_size, True)
+    test_true_y = create_true_y(test_data, batch_size, True)
 
     print('Read all data.')
     
+    # IF TRAIN IS TRUE:
     model = LSTMModel(EMBEDDING_DIM, HIDDEN_DIM, NUM_HIDDEN, len(word_to_ix), len(tag_to_ix))
     if torch.cuda.is_available(): model.cuda()
     loss_function = nn.NLLLoss()
@@ -242,7 +259,7 @@ def run_rnn_experiment(tag_num, experiment_num):
     
             
 # ACTUALLY RUN THE EXPERIMENTS.
-for experiment_num in range(1, 6):
+for experiment_num in range(4, 11):
     for tag_num in range(4):
         print('RUNNING EXPERIMENT {0} TAG {1}'.format(experiment_num, tag_num))
         run_rnn_experiment(tag_num, experiment_num)
