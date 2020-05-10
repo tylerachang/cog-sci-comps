@@ -41,3 +41,7 @@ python3 sentence_error_report.py --sentence_id 0
 java -cp "*" edu.stanford.nlp.parser.lexparser.LexicalizedParser -sentences newline edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz sentences_conll_test.txt > test_output.txt
 
 python3 parse_stanford_output.py --input "sentences_conll_test_stanford.txt" --true_tags "phrase_tags_conll_test.txt"
+
+python3 create_trees.py --input "conll_dev.txt" --output "conll_dev_trees.txt"
+
+java -cp "*" edu.stanford.nlp.parser.lexparser.LexicalizedParser -PCFG -vMarkov 1 -uwm 0 -headFinder edu.stanford.nlp.trees.LeftHeadFinder -train trees_conll_dev.txt -test trees_conll_test.txt > sentences_conll_test_word_trained_pcfg.txt

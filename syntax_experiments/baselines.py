@@ -67,7 +67,8 @@ def per_word_mft(xy_train, x_test):
  
     return predictions
     
-    
+
+# Prediction tag is an integer 1-4.
 def main(train_tags, test_tags, test_sentences_path, prediction_tag):
     
     xy_train = load_words_and_tags(train_tags, prediction_tag)
@@ -77,6 +78,15 @@ def main(train_tags, test_tags, test_sentences_path, prediction_tag):
     mft_y_hat = most_frequent_tag(xy_train, x_test)
     per_word_mft_y_hat = per_word_mft(xy_train, x_test)
     
+    # Output predictions for per-word MFT.
+    predictions = per_word_mft_y_hat
+    true_tags_file = open(test_tags, "r")
+    true_tags_lines = true_tags_file.readlines()
+    outfile = codecs.open('predictions-baseline-tag{}.txt'.format(prediction_tag), 'w')
+    for word_index in range(len(predictions)):
+        outfile.write('{0}\t{1}\n'.format(predictions[word_index], true_tags_lines[word_index].split()[prediction_tag]))
+    
+    # Can replace with regular accuracy instead.
     print('MFT sentence-averaged accuracy: {}'.format(
         sentence_averaged_accuracy(mft_y_hat, y_test, get_sentence_indices(test_sentences_path))))
     print('Per-word MFT sentence-averaged accuracy: {}'.format(

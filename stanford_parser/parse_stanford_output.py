@@ -85,7 +85,7 @@ def main(input_path, true_tags_path):
     true_tags_lines = true_tags_file.readlines() 
     # Output predictions to files.
     for i in range(4):
-        outfile = codecs.open('predictions-StanfordParser-tag{}.txt'.format(i+1), 'w')
+        outfile = codecs.open('predictions-PCFGSentenceTrainedParser-tag{}.txt'.format(i+1), 'w')
         for word_index in range(len(predictions[i])):
             outfile.write('{0}\t{1}\n'.format(predictions[i][word_index], true_tags_lines[word_index].split()[i+1]))
     
