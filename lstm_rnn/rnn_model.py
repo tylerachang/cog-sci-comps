@@ -184,9 +184,11 @@ def run_rnn_experiment(tag_num, experiment_num):
     training_y = create_target_tensor_batches(training_data, tag_to_ix, batch_size, False)
     dev_x = create_input_tensor_batches(dev_data, word_to_ix, batch_size, False)
     dev_y = create_target_tensor_batches(dev_data, tag_to_ix, batch_size, False)
+	# Save actual y values (tags) instead of tensors.
     dev_true_y = create_true_y(dev_data, batch_size, False)
     test_x = create_input_tensor_batches(test_data, word_to_ix, batch_size, True)
     test_y = create_target_tensor_batches(test_data, tag_to_ix, batch_size, True)
+	# Save actual y values (tags) instead of tensors.
     test_true_y = create_true_y(test_data, batch_size, True)
 
     print('Read all data.')
