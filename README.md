@@ -1,5 +1,5 @@
 # cog-sci-comps
-Cognitive science comps: Emergence of generative syntax in neural machine translation models.
+Cognitive science comps: emergence of hierarchical syntax in neural machine translation.
 
 TODO: this code is generally not very clean. Maybe clean it up one day.
 
