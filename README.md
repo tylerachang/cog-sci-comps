@@ -1,5 +1,5 @@
-# cog-sci-comps
-Cognitive science comps: emergence of hierarchical syntax in neural machine translation.
+# syntax-in-nmt
+Paper: [Encodings of source syntax: similarities in NMT representations across target languages.](https://www.aclweb.org/anthology/2020.repl4nlp-1.2/)
 
 TODO: this code is generally not very clean. Maybe clean it up one day.
 
